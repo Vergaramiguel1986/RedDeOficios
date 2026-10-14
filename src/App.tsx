@@ -14,8 +14,13 @@ import { WhatsAppContactModal } from './components/WhatsAppContactModal';
 import { PostulationModal } from './components/PostulationModal';
 import { UserAccountModal } from './components/UserAccountModal';
 import { Footer } from './components/Footer';
+import { useAuth } from './context/AuthContext';
+import { LoginModal } from './components/LoginModal';
 
 export default function App() {
+  const { currentUser, loading } = useAuth();
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+
   const [currentTab, setCurrentTab] = useState<'explorar' | 'publicar' | 'alertas'>('explorar');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -55,10 +60,8 @@ export default function App() {
   };
 
   // 1. Sincronización en tiempo real de Trabajadores (Colección 'workers')
-  // Consulta onSnapshot para mostrar tanto los datos persistentes de Firebase como los de prueba
   useEffect(() => {
     try {
-      console.log("[Firestore] Conectando listener onSnapshot a la colección 'workers'...");
       const unsubscribe = onSnapshot(collection(db, "workers"), (snapshot) => {
         const seenWorkerIds = new Set<string>();
         const firestoreWorkers: TradeWorker[] = [];
@@ -112,17 +115,13 @@ export default function App() {
           } as TradeWorker);
         }
 
-        console.log(`[Firestore onSnapshot] Recibidos ${firestoreWorkers.length} documentos persistentes de 'workers'.`);
-
-        // Coexistencia: Las publicaciones de Firestore conviven con los ejemplos de muestra (INITIAL_WORKERS)
-        // y no se borran al refrescar la página.
         const samplesNotOverridden = INITIAL_WORKERS.filter(
           (iw) => !seenWorkerIds.has(iw.id) && !firestoreWorkers.some((fw) => fw.name === iw.name && fw.tradeTitle === iw.tradeTitle)
         );
 
         setWorkers([...firestoreWorkers, ...samplesNotOverridden]);
       }, (error) => {
-        console.warn("[Firestore] Aviso en listener de 'workers':", error);
+        console.warn("Aviso en listener de 'workers':", error);
         setWorkers(INITIAL_WORKERS);
       });
 
@@ -132,7 +131,7 @@ export default function App() {
     }
   }, []);
 
-  // 2. Sincronización en tiempo real de Pedidos de Vecinos (Colección 'requests')
+  // 2. Sincronización de Pedidos
   useEffect(() => {
     try {
       const unsubscribeRequests = onSnapshot(collection(db, "requests"), (snapshot) => {
@@ -158,7 +157,7 @@ export default function App() {
         );
         setRequests([...firestoreRequests, ...samplesNotOverridden]);
       }, (err) => {
-        console.warn("Aviso: listener de Firestore requests en modo local:", err);
+        console.warn("Aviso requests:", err);
       });
 
       return () => unsubscribeRequests();
@@ -167,7 +166,7 @@ export default function App() {
     }
   }, []);
 
-  // 3. Sincronización en tiempo real de Alertas y Postulaciones (Colección 'alerts')
+  // 3. Sincronización de Alertas
   useEffect(() => {
     try {
       const unsubscribeAlerts = onSnapshot(collection(db, "alerts"), (snapshot) => {
@@ -201,7 +200,7 @@ export default function App() {
         );
         setAlerts([...firestoreAlerts, ...samplesNotOverridden]);
       }, (err) => {
-        console.warn("Aviso: listener de Firestore alerts en modo local:", err);
+        console.warn("Aviso alerts:", err);
       });
 
       return () => unsubscribeAlerts();
@@ -210,13 +209,9 @@ export default function App() {
     }
   }, []);
 
-  // Guardar un nuevo prestador/trabajador en Firestore
-  // Ejecuta addDoc(collection(db, 'workers'), ...) para crear automáticamente la colección si está vacía
   const handleAddWorker = async (newWorker: TradeWorker) => {
-    // 1. Actualización inmediata local
     setWorkers((prev) => [newWorker, ...prev.filter((w) => w.id !== newWorker.id)]);
 
-    // 2. Si es una zona o municipio nuevo, cambiar automáticamente a ella para que el mapa vuele y la centre
     if (newWorker.zone || newWorker.municipio || newWorker.localidad) {
       const dynamicZones = extractNeighborhoodsFromWorkers([newWorker, ...workers]);
       const targetZone = dynamicZones.find(
@@ -231,7 +226,6 @@ export default function App() {
     }
 
     try {
-      // 3. Sanitizar payload y persistir directamente en la colección 'workers' de Firebase Firestore
       const workerPayload = sanitizeForFirestore({
         name: newWorker.name,
         tradeTitle: newWorker.tradeTitle || 'Oficio General',
@@ -244,7 +238,7 @@ export default function App() {
         distanceKm: newWorker.distanceKm ?? 0.45,
         municipio: newWorker.municipio || '',
         localidad: newWorker.localidad || '',
-        zone: newWorker.zone || newWorker.location || (newWorker.municipio ? `${newWorker.localidad || ''} (${newWorker.municipio})` : 'Pilar'),
+        zone: newWorker.zone || newWorker.location || 'Pilar',
         location: newWorker.location || newWorker.zone || 'Pilar',
         address: newWorker.address || newWorker.location || 'Pilar',
         bio: newWorker.bio || 'Prestador de confianza en el barrio.',
@@ -265,27 +259,20 @@ export default function App() {
         createdAt: new Date().toISOString(),
       });
 
-      console.log("[Firestore] Ejecutando addDoc(collection(db, 'workers'), ...)", workerPayload);
       const docRef = await addDoc(collection(db, "workers"), workerPayload);
-      console.log(`[Firestore] ✓ Documento creado exitosamente en colección 'workers' con ID: ${docRef.id}`);
-
-      // Actualizar el ID local con el ID generado en Firestore
       setWorkers((prev) =>
         prev.map((w) => (w.id === newWorker.id ? { ...w, id: docRef.id } : w))
       );
-
-      showToast(`¡Prestador guardado permanentemente en Firestore (Colección 'workers')!`);
+      showToast(`¡Prestador guardado permanentemente en Firestore!`);
     } catch (error) {
-      console.error("Error al ejecutar addDoc en Firestore:", error);
+      console.error("Error al guardar en Firestore:", error);
       showToast(`¡Se sumó ${newWorker.name} a la Red de Oficios!`);
     }
   };
 
-  // Guardar un nuevo pedido de servicio de un vecino en Firestore
   const handleAddRequest = async (newRequest: ServiceRequest) => {
     setRequests((prev) => (prev.some((r) => r.id === newRequest.id) ? prev : [newRequest, ...prev]));
 
-    // Crear la alerta para los prestadores de la zona
     const newAlert: WhatsAppNotification = {
       id: 'alert-' + Date.now(),
       title: `¡Nuevo pedido de ${newRequest.category} en ${newRequest.location}!`,
@@ -299,107 +286,46 @@ export default function App() {
     setAlerts((prev) => (prev.some((a) => a.id === newAlert.id) ? prev : [newAlert, ...prev]));
 
     try {
-      const sanitizedReq = sanitizeForFirestore({
-        ...newRequest,
-        createdAt: new Date().toISOString(),
-      });
-      const sanitizedAlert = sanitizeForFirestore({
-        ...newAlert,
-        createdAt: new Date().toISOString(),
-      });
-
-      // Persistir en Firestore en las colecciones 'requests' y 'alerts'
-      await addDoc(collection(db, "requests"), sanitizedReq);
-      await addDoc(collection(db, "alerts"), sanitizedAlert);
-      showToast('¡Tu pedido barrial fue publicado y guardado en Firestore!');
+      await addDoc(collection(db, "requests"), sanitizeForFirestore({ ...newRequest, createdAt: new Date().toISOString() }));
+      await addDoc(collection(db, "alerts"), sanitizeForFirestore({ ...newAlert, createdAt: new Date().toISOString() }));
+      showToast('¡Tu pedido barrial fue publicado!');
     } catch (e) {
-      console.warn("Aviso al guardar pedido en Firestore", e);
       showToast('¡Tu pedido barrial fue publicado!');
     }
   };
 
-  // Enviar y persistir postulación de un oficio a una oportunidad
   const handlePostulationProposal = async (alertId: string, proposal: string) => {
     setAlerts((prev) =>
-      prev.map((a) =>
-        a.id === alertId
-          ? { ...a, responded: true, userProposalSent: proposal }
-          : a
-      )
+      prev.map((a) => (a.id === alertId ? { ...a, responded: true, userProposalSent: proposal } : a))
     );
 
     try {
-      // 1. Guardar la postulación en la colección 'postulations'
-      await addDoc(collection(db, "postulations"), sanitizeForFirestore({
-        alertId,
-        proposal,
-        createdAt: new Date().toISOString(),
-      }));
-
-      // 2. Persistir el estado de respondida en 'alerts' para que persista al refrescar
-      await setDoc(doc(db, "alerts", alertId), {
-        id: alertId,
-        responded: true,
-        userProposalSent: proposal,
-        updatedAt: new Date().toISOString(),
-      }, { merge: true });
-
-      showToast('¡Tu postulación fue enviada al vecino y guardada en Firestore!');
+      await addDoc(collection(db, "postulations"), sanitizeForFirestore({ alertId, proposal, createdAt: new Date().toISOString() }));
+      await setDoc(doc(db, "alerts", alertId), { id: alertId, responded: true, userProposalSent: proposal, updatedAt: new Date().toISOString() }, { merge: true });
+      showToast('¡Tu postulación fue enviada y guardada!');
     } catch (e) {
-      console.warn("Aviso al registrar postulación en Firestore", e);
-      showToast('¡Tu postulación fue enviada al vecino por WhatsApp!');
+      showToast('¡Tu postulación fue enviada!');
     }
   };
 
-  // Guardar una nueva alerta (ej: alertas generadas en el Bot de WhatsApp)
   const handleAddAlert = async (newAlert: WhatsAppNotification) => {
     setAlerts((prev) => (prev.some((a) => a.id === newAlert.id) ? prev : [newAlert, ...prev]));
     try {
-      await addDoc(collection(db, "alerts"), sanitizeForFirestore({
-        ...newAlert,
-        createdAt: new Date().toISOString(),
-      }));
-    } catch (e) {
-      console.warn("Aviso al guardar alerta en Firestore", e);
-    }
+      await addDoc(collection(db, "alerts"), sanitizeForFirestore({ ...newAlert, createdAt: new Date().toISOString() }));
+    } catch (e) {}
   };
 
-  // Guardar los prestadores de prueba de una sola vez en Firestore (útil si la base de datos está vacía)
   const handleSeedSampleWorkers = async () => {
     try {
       showToast('Guardando prestadores de muestra en Firestore...');
       let count = 0;
       for (const worker of INITIAL_WORKERS) {
-        const payload = sanitizeForFirestore({
-          name: worker.name,
-          tradeTitle: worker.tradeTitle,
-          category: worker.category,
-          verified: worker.verified,
-          rating: worker.rating,
-          reviewsCount: worker.reviewsCount,
-          distanceMeters: worker.distanceMeters,
-          distanceKm: worker.distanceKm,
-          zone: worker.zone || 'Villa Urquiza',
-          location: worker.location || 'Villa Urquiza',
-          address: worker.address,
-          bio: worker.bio,
-          conditionOfWork: worker.conditionOfWork,
-          whatsappNumber: worker.whatsappNumber,
-          avatarUrl: worker.avatarUrl,
-          avatarAlt: worker.avatarAlt,
-          mapCoords: worker.mapCoords,
-          specialties: worker.specialties || [],
-          reviews: worker.reviews || [],
-          sampleWorks: worker.sampleWorks || [],
-          createdAt: new Date().toISOString(),
-        });
-        await addDoc(collection(db, "workers"), payload);
+        await addDoc(collection(db, "workers"), sanitizeForFirestore({ ...worker, createdAt: new Date().toISOString() }));
         count++;
       }
-      showToast(`¡Se subieron ${count} prestadores a la colección 'workers' de Firestore!`);
+      showToast(`¡Se subieron ${count} prestadores a Firestore!`);
     } catch (error) {
-      console.error("Error al sembrar prestadores en Firestore:", error);
-      showToast("Error al conectar con Firestore. Verificá los permisos.");
+      showToast("Error al conectar con Firestore.");
     }
   };
 
@@ -407,9 +333,54 @@ export default function App() {
     showToast(`Mensaje enviado a ${workerName} vía WhatsApp`);
   };
 
+  // --- CONTROL DE ACCESO (AUTENTICACIÓN REQUERIDA) ---
+
+  // 1. Pantalla de carga mientras Firebase verifica sesión
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center font-['Nunito_Sans',sans-serif]">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-[#2A5C8A] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[#2C3E50] font-medium text-sm">Cargando Red de Oficios...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Si NO hay usuario autenticado, bloqueamos la app y mostramos solo el Login
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-4 text-center font-['Nunito_Sans',sans-serif]">
+        <div className="max-w-md w-full bg-white rounded-3xl p-8 shadow-xl border border-gray-100 flex flex-col items-center">
+          
+          <div className="w-20 h-20 bg-[#2A5C8A]/10 rounded-2xl flex items-center justify-center text-4xl mb-6">
+            🏘️
+          </div>
+
+          <h1 className="text-2xl font-bold text-[#2C3E50] mb-2">
+            Red de Oficios
+          </h1>
+          <p className="text-sm text-[#6C7A89] mb-8">
+            La plataforma comunitaria para conectar vecinos con prestadores de servicios de cercanía.
+          </p>
+
+          <button
+            onClick={() => setIsLoginOpen(true)}
+            className="w-full py-4 bg-[#2A5C8A] text-white font-bold rounded-2xl shadow-lg hover:bg-[#2A5C8A]/90 transition-all active:scale-95 text-base"
+          >
+            Iniciar Sesión con Google
+          </button>
+        </div>
+
+        {/* Modal de selección de rol y Login */}
+        <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+      </div>
+    );
+  }
+
+  // 3. Si SÍ está autenticado, se muestra toda la aplicación normal
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-['Nunito_Sans',sans-serif] text-[#2C3E50]">
-      {/* Header con lista dinámica de barrios/municipios extraída de los trabajadores */}
       <Header
         currentTab={currentTab}
         onSelectTab={(tab) => {
@@ -423,12 +394,11 @@ export default function App() {
         onSelectNeighborhood={(neighborhood) => {
           setSelectedNeighborhood(neighborhood);
           setCurrentTab('explorar');
-          showToast(`Zona cambiada a ${neighborhood.name} (${neighborhood.comuna || 'Municipio'})`);
+          showToast(`Zona cambiada a ${neighborhood.name}`);
         }}
         neighborhoods={availableNeighborhoods}
       />
 
-      {/* Main Container */}
       <main className="flex-1 pt-24">
         {currentTab === 'explorar' && (
           <ExploreView
@@ -444,9 +414,7 @@ export default function App() {
         {currentTab === 'alertas' && (
           <WhatsAppAlertsView
             alerts={alerts}
-            onExploreMapForAlert={() => {
-              setCurrentTab('explorar');
-            }}
+            onExploreMapForAlert={() => setCurrentTab('explorar')}
             onPostulateAlert={(alert) => setPostulatingAlert(alert)}
             onAddAlert={handleAddAlert}
           />
@@ -464,10 +432,8 @@ export default function App() {
         )}
       </main>
 
-      {/* Footer */}
       <Footer />
 
-      {/* Profile & Reviews Modal */}
       <ProfileModal
         worker={viewingWorker}
         onClose={() => setViewingWorker(null)}
@@ -477,21 +443,18 @@ export default function App() {
         }}
       />
 
-      {/* WhatsApp Direct Contact Modal */}
       <WhatsAppContactModal
         worker={contactingWorker}
         onClose={() => setContactingWorker(null)}
         onMessageSent={handleMessageSentToWorker}
       />
 
-      {/* Postulation to WhatsApp Opportunity Modal */}
       <PostulationModal
         alert={postulatingAlert}
         onClose={() => setPostulatingAlert(null)}
         onSubmitProposal={handlePostulationProposal}
       />
 
-      {/* User Neighborhood Identity Account Modal */}
       <UserAccountModal
         isOpen={accountModalOpen}
         onClose={() => setAccountModalOpen(false)}
@@ -506,7 +469,6 @@ export default function App() {
         onSeedSampleWorkers={handleSeedSampleWorkers}
       />
 
-      {/* Global App Toast */}
       {appToast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#2C3E50] text-white px-5 py-3 rounded-2xl shadow-xl border border-slate-700 text-sm font-semibold flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
           <span className="material-symbols-outlined text-[#FFC067] text-[20px]">info</span>
