@@ -1,0 +1,8 @@
+{
+  "name": "Red de oficios ",
+  "description": "Plataforma barrial comunitaria para conectar vecinos con oficios locales de cercanía, mapas territoriales interactivos y alertas por WhatsApp.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

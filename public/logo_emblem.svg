@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" width="100%" height="100%">
+  <!-- Heart Emblem: Pin + Wrench Handshake -->
+  <!-- 1. Left: Location Pin Outer Loop (Navy Blue) -->
+  <path
+    d="M115 88 C115 54 94 28 64 28 C34 28 14 54 14 86 C14 125 55 158 66 168"
+    stroke="#254B6E"
+    stroke-width="15"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
+
+  <!-- 2. Inside Location Pin: Amber Pin Marker with white cutout -->
+  <path
+    d="M64 54 C73 54 80 61 80 70 C80 82 64 98 64 98 C64 98 48 82 48 70 C48 61 55 54 64 54 Z"
+    fill="#F7AC43"
+  />
+  <circle cx="64" cy="70" r="6" fill="#FFFFFF" />
+
+  <!-- 3. Right: Open Wrench (Amber) -->
+  <path
+    d="M135 56 C142 42 158 32 176 38 C185 41 193 49 196 58 L180 65 C176 62 171 62 167 65 L179 83 C184 82 188 83 191 86 L205 77 C205 92 196 104 184 109 L148 138"
+    stroke="#F7AC43"
+    stroke-width="13"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="#F7AC43"
+    fill-opacity="0.12"
+  />
+
+  <!-- 4. Bottom Handshake Clasp -->
+  <path
+    d="M66 168 C73 176 82 182 92 183 C102 184 111 179 118 171"
+    stroke="#254B6E"
+    stroke-width="14"
+    stroke-linecap="round"
+    fill="none"
+  />
+
+  <path
+    d="M148 138 C141 146 130 159 118 171"
+    stroke="#F7AC43"
+    stroke-width="14"
+    stroke-linecap="round"
+    fill="none"
+  />
+
+  <!-- 4 Amber Finger Knuckles -->
+  <g stroke="#F7AC43" stroke-width="11" stroke-linecap="round">
+    <line x1="64" y1="135" x2="74" y2="144" />
+    <line x1="73" y1="146" x2="84" y2="155" />
+    <line x1="83" y1="157" x2="94" y2="166" />
+    <line x1="93" y1="168" x2="104" y2="177" />
+  </g>
+
+  <!-- 3 Amber Interlocking Under-fingers -->
+  <g stroke="#F7AC43" stroke-width="10" stroke-linecap="round">
+    <line x1="112" y1="138" x2="123" y2="148" />
+    <line x1="122" y1="148" x2="133" y2="158" />
+    <line x1="132" y1="158" x2="143" y2="168" />
+  </g>
+</svg>

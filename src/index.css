@@ -1,0 +1,103 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Nunito Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  }
+}
+
+/* Material Symbols styling */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'liga';
+}
+
+/* Hide scrollbar for tabs */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Explicit, visible custom scrollbar for oficios category section */
+.oficios-scrollbar {
+  scrollbar-width: auto;
+  scrollbar-color: #2A5C8A #E2E8F0;
+}
+.oficios-scrollbar::-webkit-scrollbar {
+  height: 8px;
+  display: block;
+}
+.oficios-scrollbar::-webkit-scrollbar-track {
+  background: #E2E8F0;
+  border-radius: 9999px;
+  margin: 0 6px;
+}
+.oficios-scrollbar::-webkit-scrollbar-thumb {
+  background: #2A5C8A;
+  border-radius: 9999px;
+  border: 1.5px solid #E2E8F0;
+}
+.oficios-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #FFC067;
+}
+
+/* Explicit vertical scrollbar for split panes (personas disponibles and map) */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #2A5C8A #EDF2F7;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+  display: block;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #EDF2F7;
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #2A5C8A;
+  border-radius: 9999px;
+  border: 1.5px solid #EDF2F7;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #FFC067;
+}
+
+/* Subtle radar pulse effect */
+@keyframes radar-pulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.2;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.6;
+  }
+}
+
+.animate-radar {
+  animation: radar-pulse 3s infinite ease-in-out;
+}
