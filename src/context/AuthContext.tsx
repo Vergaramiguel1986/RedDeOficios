@@ -6,7 +6,7 @@ import {
   User as FirebaseUser 
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, googleProvider, db } from '../config/firebase';
+import { auth, googleProvider, db } from "../firebase";
 
 interface UserProfile {
   uid: string;
