@@ -36,56 +36,50 @@ export default function App() {
     setTimeout(() => setAppToast(null), 4000);
   };
 
-  // 1. Pantalla de carga inicial mientras Firebase verifica la sesión
+  // 1. Pantalla de carga mientras Firebase verifica sesión
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#2C3E50] to-[#1A252F] flex items-center justify-center text-white">
+      <div className="min-h-screen bg-[#2C3E50] flex items-center justify-center text-white font-sans">
         <div className="text-center space-y-4">
           <div className="w-12 h-12 border-4 border-[#FFC067] border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-sm font-medium tracking-wide">Cargando Red de Oficios...</p>
+          <p className="text-sm font-medium">Cargando Red de Oficios...</p>
         </div>
       </div>
     );
   }
 
-  // 2. PANTALLA DE ACCESO RESTRINGIDO (Si no hay sesión iniciada)
+  // 2. Si NO hay usuario, bloqueamos toda la vista y mostramos el acceso
   if (!currentUser) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#2C3E50] to-[#1A252F] flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-3xl p-8 shadow-2xl border border-white/10 text-center space-y-6">
-          
+      <div className="min-h-screen bg-gradient-to-br from-[#2C3E50] to-[#1A252F] flex items-center justify-center p-4 font-sans">
+        <div className="max-w-md w-full bg-white rounded-3xl p-8 shadow-2xl text-center space-y-6">
           <div className="w-20 h-20 bg-[#2A5C8A]/10 rounded-2xl flex items-center justify-center text-4xl mx-auto shadow-inner">
             🏘️
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-2xl font-black text-[#2C3E50]">Red de Oficios</h1>
-            <p className="text-sm text-gray-500 leading-relaxed">
-              Plataforma exclusiva para conectar vecinos y prestadores de servicios de manera directa y segura.
+            <h1 className="text-2xl font-extrabold text-[#2C3E50]">Red de Oficios</h1>
+            <p className="text-sm text-gray-500">
+              Plataforma comunitaria para conectar vecinos y prestadores de servicios en la zona.
             </p>
           </div>
 
           <button
             onClick={() => setIsLoginOpen(true)}
-            className="w-full py-4 bg-[#2A5C8A] hover:bg-[#2A5C8A]/90 text-white font-bold rounded-2xl shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-3 text-sm"
+            className="w-full py-4 bg-[#2A5C8A] hover:bg-[#2A5C8A]/90 text-white font-bold rounded-2xl shadow-lg transition-all transform active:scale-95 text-sm"
           >
-            <span>🔐</span> Iniciar Sesión para Ingresar
+            Iniciar Sesión para Ingresar
           </button>
-
-          <p className="text-[11px] text-gray-400">
-            Acceso protegido mediante autenticación institucional de Google.
-          </p>
         </div>
 
-        {/* Modal de Login / Registro por Roles */}
         <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
       </div>
     );
   }
 
-  // 3. APLICACIÓN PRINCIPAL (Visible únicamente con sesión activa)
+  // 3. Aplicación principal (Solo visible si hay sesión)
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-['Nunito_Sans',sans-serif] text-[#2C3E50]">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans text-[#2C3E50]">
       <Header
         currentTab={currentTab}
         onSelectTab={(tab) => {
@@ -169,7 +163,7 @@ export default function App() {
       />
 
       {appToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#2C3E50] text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 text-sm font-semibold flex items-center gap-2">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#2C3E50] text-white px-5 py-3 rounded-2xl shadow-2xl text-sm font-semibold flex items-center gap-2">
           <span className="text-[#FFC067]">ℹ️</span>
           <span>{appToast}</span>
         </div>
