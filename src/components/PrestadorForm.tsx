@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { db } from '../config/firebase';
+import { auth, googleProvider, db } from "../firebase";
+
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 
 interface PrestadorFormProps {
